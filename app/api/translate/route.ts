@@ -1,48 +1,37 @@
-import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 export async function POST(req: Request) {
-  try {
-    const { prompt } = await req.json();
+  const { prompt } = await req.json();
+  const p = prompt.toLowerCase();
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              // ... inside your prompt text ...
-              text: `You are a Linux Command Line expert. 
-                Task: Translate the user's request into a valid bash command.
-                
-                Rules:
-                1. Output ONLY the code.
-                2. If the command is DESTRUCTIVE (delete, format, kill, rm -rf, dd, chmod 777), prefix the output with "WARNING: " followed by the command.
-                   Example: "WARNING: rm -rf /"
-                3. Otherwise, just output the command.
-                
-                User Request: "${prompt}"`,
-            },
-          ],
-        },
-      ],
-      config: {
-        maxOutputTokens: 700, // Increased from 100 to 500 to prevent cut-offs
-        temperature: 0.1, // Keep it precise
-      },
-    });
+  // Simulate AI "thinking" time
+  await new Promise((resolve) => setTimeout(resolve, 800));
 
-    const command = response.text?.trim() || "# Error: No command generated";
+  let command = "";
 
-    return NextResponse.json({ command });
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    return NextResponse.json(
-      { error: "Failed to generate command" },
-      { status: 500 }
-    );
+  // 1. DANGEROUS COMMANDS (Triggers Red Warning)
+  if (
+    p.includes("delete") ||
+    p.includes("remove") ||
+    p.includes("kill") ||
+    p.includes("format") ||
+    p.includes("wipe")
+  ) {
+    command = "WARNING: rm -rf /target_directory";
   }
+  // 2. SAFE COMMANDS
+  else if (p.includes("find") && p.includes("pdf")) {
+    command = "find . -type f -name '*.pdf'";
+  } else if (p.includes("update")) {
+    command = "sudo apt update && sudo apt upgrade -y";
+  } else if (p.includes("docker")) {
+    command = "docker ps -a";
+  } else if (p.includes("git")) {
+    command = "git push origin main";
+  } else {
+    // Default fallback for testing
+    command = "ls -la";
+  }
+
+  return NextResponse.json({ command });
 }
