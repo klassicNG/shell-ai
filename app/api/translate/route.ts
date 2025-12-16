@@ -14,22 +14,23 @@ export async function POST(req: Request) {
           role: "user",
           parts: [
             {
+              // ... inside your prompt text ...
               text: `You are a Linux Command Line expert. 
-              
-              Task: Translate the user's request into a valid bash command.
-              
-              Rules:
-              1. Output ONLY the code. Do not use Markdown (no \`\`\`).
-              2. Do not explain the code.
-              3. If the request is destructive (like "format pc"), return a command that prints a warning, like: echo "That is dangerous!"
-              
-              User Request: "${prompt}"`,
+                Task: Translate the user's request into a valid bash command.
+                
+                Rules:
+                1. Output ONLY the code.
+                2. If the command is DESTRUCTIVE (delete, format, kill, rm -rf, dd, chmod 777), prefix the output with "WARNING: " followed by the command.
+                   Example: "WARNING: rm -rf /"
+                3. Otherwise, just output the command.
+                
+                User Request: "${prompt}"`,
             },
           ],
         },
       ],
       config: {
-        maxOutputTokens: 500, // Increased from 100 to 500 to prevent cut-offs
+        maxOutputTokens: 700, // Increased from 100 to 500 to prevent cut-offs
         temperature: 0.1, // Keep it precise
       },
     });

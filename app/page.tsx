@@ -60,9 +60,14 @@ export default function Home() {
           />
 
           <button
-            onClick={handleTranslate}
+            type="button" // 1. Explicitly say this is a button, not a submit handler
+            onClick={(e) => {
+              e.preventDefault(); // 2. Stop any weird ghost clicks
+              handleTranslate();
+            }}
             disabled={loading}
-            className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl font-bold text-white shadow-[0_0_20px_rgba(147,51,234,0.3)] hover:shadow-[0_0_30px_rgba(147,51,234,0.5)] transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            // 3. touch-manipulation helps mobile browsers know this isn't a scroll event
+            className="touch-manipulation w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl font-bold text-white shadow-[0_0_20px_rgba(147,51,234,0.3)] hover:shadow-[0_0_30px_rgba(147,51,234,0.5)] transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <Loader2 className="animate-spin" />
@@ -81,7 +86,13 @@ export default function Home() {
             className="relative group"
           >
             <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl opacity-30 blur group-hover:opacity-50 transition duration-1000"></div>
-            <div className="relative bg-black border border-slate-800 rounded-xl p-6 font-mono text-green-400 shadow-2xl">
+            <div
+              className={`relative bg-black border rounded-xl p-6 font-mono shadow-2xl ${
+                output.startsWith("WARNING:")
+                  ? "border-red-500 text-red-400"
+                  : "border-slate-800 text-green-400"
+              }`}
+            >
               <div className="flex justify-between items-start mb-2">
                 <span className="text-slate-500 text-xs uppercase tracking-widest">
                   Bash Output
@@ -94,9 +105,24 @@ export default function Home() {
                 </button>
               </div>
               <div className="text-lg break-all">
-                <span className="text-purple-500 mr-2">$</span>
-                {output}
-                <span className="animate-pulse inline-block w-2 h-5 bg-green-400 ml-1 align-middle"></span>
+                <span
+                  className={
+                    output.startsWith("WARNING:")
+                      ? "text-red-500 mr-2"
+                      : "text-purple-500 mr-2"
+                  }
+                >
+                  {output.startsWith("WARNING:") ? "⚠️" : "$"}
+                </span>
+                {output.replace("WARNING: ", "")}
+                <span className="animate-pulse inline-block w-2 h-5 bg-green-400 ml-1 align-middle">
+                  {" "}
+                </span>
+                {output.startsWith("WARNING:") && (
+                  <p className="text-xs text-red-500 mt-2 font-sans">
+                    *Be careful! This command is destructive.*
+                  </p>
+                )}
               </div>
             </div>
           </motion.div>
