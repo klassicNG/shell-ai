@@ -14,19 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Shell-AI | Linux Command Translator",
-  description: "Translate natural language to Linux commands instantly.",
-  openGraph: {
-    title: "Shell-AI",
-    description: "Don't memorize commands. Generate them.",
-    url: "https://shell-ai-two.vercel.app",
-    siteName: "Shell-AI",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Shell-AI",
-    description: "Don't memorize commands. Generate them.",
-  },
+  description:
+    "Translate natural language to Linux commands instantly using AI.",
 };
 
 export default function RootLayout({
