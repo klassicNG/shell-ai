@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Terminal, Loader2 } from "lucide-react";
+import { Copy, Terminal, Loader2, ArrowUpDown } from "lucide-react"; // Added ArrowUpDown
 import { motion } from "framer-motion";
 
 export default function Home() {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<"gen" | "explain">("gen"); // Track current mode
 
   const handleTranslate = async () => {
     if (!input) return;
@@ -17,7 +18,7 @@ export default function Home() {
     try {
       const res = await fetch("/api/translate", {
         method: "POST",
-        body: JSON.stringify({ prompt: input }),
+        body: JSON.stringify({ prompt: input, mode }), // Send mode to backend
       });
       const data = await res.json();
       setOutput(data.command);
@@ -29,73 +30,132 @@ export default function Home() {
   };
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(output);
-    alert("Copied to clipboard!"); // Simple alert for MVP
+    const textToCopy = output.replace("WARNING: ", "");
+    navigator.clipboard.writeText(textToCopy);
+    alert("Copied to clipboard!");
+  };
+
+  const toggleMode = () => {
+    setMode(mode === "gen" ? "explain" : "gen");
+    setInput("");
+    setOutput("");
   };
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-200 flex flex-col items-center justify-center p-4 font-mono selection:bg-purple-500/30">
-      {/* Background Glow Effect */}
+      {/* Dynamic Background */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-        <div className="absolute top-[-10%] left-[20%] w-96 h-96 bg-purple-600/20 rounded-full blur-[100px]" />
-        <div className="absolute bottom-[-10%] right-[20%] w-96 h-96 bg-blue-600/10 rounded-full blur-[100px]" />
+        <div
+          className={`absolute top-[-10%] left-[20%] w-96 h-96 rounded-full blur-[100px] transition-colors duration-1000 ${
+            output.startsWith("WARNING:") || output.startsWith("⚠️")
+              ? "bg-red-600/20"
+              : "bg-purple-600/20"
+          }`}
+        />
+        <div className="absolute bottom-[-10%] right-[20%] w-96 h-96 rounded-full blur-[100px] bg-blue-600/10" />
       </div>
 
       <div className="max-w-2xl w-full space-y-8">
-        {/* Header */}
+        {/* Header with Mode Badge */}
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
             Shell-AI
           </h1>
-          <p className="text-slate-500">Natural Language to Linux Terminal</p>
+          <div className="flex items-center justify-center gap-2 text-slate-500">
+            <span>{mode === "gen" ? "Natural Language" : "Bash Command"}</span>
+            <ArrowUpDown size={14} />
+            <span>{mode === "gen" ? "Linux Terminal" : "Plain English"}</span>
+          </div>
         </div>
 
         {/* Input Section */}
-        <div className="space-y-4">
+        <div className="space-y-4 relative">
+          {/* The Swap Button */}
+          <button
+            onClick={toggleMode}
+            className="absolute right-4 top-4 bg-slate-800 p-2 rounded-lg hover:bg-slate-700 transition-colors z-10 border border-slate-700 group"
+            title="Switch Mode"
+          >
+            <ArrowUpDown
+              size={18}
+              className={`transition-transform duration-500 ${
+                mode === "explain"
+                  ? "rotate-180 text-blue-400"
+                  : "text-purple-400"
+              }`}
+            />
+          </button>
+
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="e.g., Find all PDF files larger than 10MB and delete them..."
-            className="w-full bg-slate-900/50 border border-slate-800 rounded-xl p-4 text-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all shadow-lg placeholder:text-slate-600 resize-none h-32"
+            placeholder={
+              mode === "gen"
+                ? "e.g., Find all PDF files larger than 10MB..."
+                : "e.g., tar -xzvf archive.tar.gz"
+            }
+            className="w-full bg-slate-900/50 border border-slate-800 rounded-xl p-4 text-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all shadow-lg placeholder:text-slate-600 resize-none h-32 pr-16"
           />
 
           <button
-            type="button" // 1. Explicitly say this is a button, not a submit handler
+            type="button"
             onClick={(e) => {
-              e.preventDefault(); // 2. Stop any weird ghost clicks
+              e.preventDefault();
               handleTranslate();
             }}
             disabled={loading}
-            // 3. touch-manipulation helps mobile browsers know this isn't a scroll event
-            className="touch-manipulation w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl font-bold text-white shadow-[0_0_20px_rgba(147,51,234,0.3)] hover:shadow-[0_0_30px_rgba(147,51,234,0.5)] transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className={`touch-manipulation w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 ${
+              mode === "gen"
+                ? "bg-gradient-to-r from-purple-600 to-blue-600 shadow-[0_0_20px_rgba(147,51,234,0.3)]"
+                : "bg-gradient-to-r from-blue-600 to-teal-600 shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+            }`}
           >
             {loading ? (
               <Loader2 className="animate-spin" />
             ) : (
               <Terminal size={20} />
             )}
-            {loading ? "Translating..." : "Generate Command"}
+            {loading
+              ? mode === "gen"
+                ? "Translating..."
+                : "Analyzing..."
+              : mode === "gen"
+              ? "Generate Command"
+              : "Explain Command"}
           </button>
         </div>
 
-        {/* Output Terminal */}
+        {/* Output Section */}
         {output && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="relative group"
           >
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl opacity-30 blur group-hover:opacity-50 transition duration-1000"></div>
             <div
-              className={`relative bg-black border rounded-xl p-6 font-mono shadow-2xl ${
-                output.startsWith("WARNING:")
+              className={`absolute -inset-0.5 rounded-xl opacity-30 blur transition duration-1000 ${
+                output.startsWith("WARNING:") || output.startsWith("⚠️")
+                  ? "bg-red-600"
+                  : mode === "gen"
+                  ? "bg-purple-600"
+                  : "bg-blue-600"
+              }`}
+            ></div>
+
+            <div
+              className={`relative bg-black border rounded-xl p-6 font-mono shadow-2xl transition-colors duration-500 ${
+                output.startsWith("WARNING:") || output.startsWith("⚠️")
                   ? "border-red-500 text-red-400"
-                  : "border-slate-800 text-green-400"
+                  : "border-slate-800 text-slate-200"
               }`}
             >
               <div className="flex justify-between items-start mb-2">
                 <span className="text-slate-500 text-xs uppercase tracking-widest">
-                  Bash Output
+                  {output.startsWith("WARNING:")
+                    ? "⚠️ DANGER DETECTED"
+                    : mode === "gen"
+                    ? "Bash Output"
+                    : "Explanation"}
                 </span>
                 <button
                   onClick={copyToClipboard}
@@ -104,25 +164,20 @@ export default function Home() {
                   <Copy size={16} />
                 </button>
               </div>
-              <div className="text-lg break-all">
+
+              <div className="text-lg break-all whitespace-pre-wrap">
                 <span
-                  className={
-                    output.startsWith("WARNING:")
-                      ? "text-red-500 mr-2"
-                      : "text-purple-500 mr-2"
-                  }
+                  className={`mr-2 ${
+                    output.startsWith("WARNING:") || output.startsWith("⚠️")
+                      ? "text-red-500"
+                      : "text-purple-500"
+                  }`}
                 >
-                  {output.startsWith("WARNING:") ? "⚠️" : "$"}
+                  {mode === "gen" && !output.startsWith("WARNING:")
+                    ? "$"
+                    : "💡"}
                 </span>
                 {output.replace("WARNING: ", "")}
-                <span className="animate-pulse inline-block w-2 h-5 bg-green-400 ml-1 align-middle">
-                  {" "}
-                </span>
-                {output.startsWith("WARNING:") && (
-                  <p className="text-xs text-red-500 mt-2 font-sans">
-                    *Be careful! This command is destructive.*
-                  </p>
-                )}
               </div>
             </div>
           </motion.div>
