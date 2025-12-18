@@ -1,37 +1,45 @@
+import Groq from "groq-sdk";
 import { NextResponse } from "next/server";
 
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
+
 export async function POST(req: Request) {
-  const { prompt } = await req.json();
-  const p = prompt.toLowerCase();
+  try {
+    const { prompt } = await req.json();
 
-  // Simulate AI "thinking" time
-  await new Promise((resolve) => setTimeout(resolve, 800));
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: `You are a Linux Command Line expert. 
+          Task: Translate requests to Bash.
+          Rules:
+          1. Output ONLY the code. No markdown, no explanations.
+          2. If the command is DESTRUCTIVE (delete, format, kill, rm -rf), prefix it with "WARNING: ".
+             Example: "WARNING: rm -rf /"
+          3. Otherwise, just output the command.`,
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      // UPDATED MODEL NAME BELOW:
+      model: "llama-3.1-8b-instant",
+      temperature: 0.1,
+      max_tokens: 200,
+    });
 
-  let command = "";
+    const command = completion.choices[0]?.message?.content || "# Error";
 
-  // 1. DANGEROUS COMMANDS (Triggers Red Warning)
-  if (
-    p.includes("delete") ||
-    p.includes("remove") ||
-    p.includes("kill") ||
-    p.includes("format") ||
-    p.includes("wipe")
-  ) {
-    command = "WARNING: rm -rf /target_directory";
+    return NextResponse.json({ command });
+  } catch (error) {
+    console.error("Groq Error:", error);
+    return NextResponse.json(
+      { error: "Failed to generate command" },
+      { status: 500 }
+    );
   }
-  // 2. SAFE COMMANDS
-  else if (p.includes("find") && p.includes("pdf")) {
-    command = "find . -type f -name '*.pdf'";
-  } else if (p.includes("update")) {
-    command = "sudo apt update && sudo apt upgrade -y";
-  } else if (p.includes("docker")) {
-    command = "docker ps -a";
-  } else if (p.includes("git")) {
-    command = "git push origin main";
-  } else {
-    // Default fallback for testing
-    command = "ls -la";
-  }
-
-  return NextResponse.json({ command });
 }
