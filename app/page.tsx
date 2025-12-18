@@ -199,6 +199,37 @@ export default function Home() {
           </motion.div>
         )}
       </div>
+      {/* Footer Section - The Tip Jar */}
+      <footer className="mt-16 pb-8 text-center text-slate-600 text-sm animate-in fade-in duration-1000">
+        <p className="mb-3">
+          Built by <span className="text-purple-400 font-semibold">Victor</span>
+          .
+        </p>
+        <div className="flex justify-center items-center gap-6">
+          <a
+            href="https://selar.com/0166wo0x69"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900 border border-slate-800 hover:border-yellow-500/50 hover:bg-yellow-500/10 transition-all duration-300"
+          >
+            <span className="text-lg group-hover:scale-110 transition-transform">
+              ☕
+            </span>
+            <span className="group-hover:text-yellow-400 font-medium">
+              Buy me a coffee
+            </span>
+          </a>
+
+          <a
+            href="https://x.com/klassicNG0357"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-blue-400 transition-colors font-medium"
+          >
+            Twitter (X)
+          </a>
+        </div>
+      </footer>
     </main>
   );
 }
