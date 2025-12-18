@@ -179,6 +179,22 @@ export default function Home() {
                 </span>
                 {output.replace("WARNING: ", "")}
               </div>
+              {/* The Warning Description */}
+              {(output.startsWith("WARNING:") || output.startsWith("⚠️")) && (
+                <div className="mt-4 p-3 bg-red-950/50 border border-red-900/50 rounded-lg flex items-start gap-3">
+                  <span className="text-xl">🚨</span>
+                  <div>
+                    <h4 className="text-red-400 font-bold text-sm">
+                      Proceed with Caution
+                    </h4>
+                    <p className="text-red-300/80 text-xs mt-1">
+                      This command can permanently modify or delete files on
+                      your system. Double-check the target directory before
+                      running.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
