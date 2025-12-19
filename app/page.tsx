@@ -16,17 +16,25 @@ export default function Home() {
   const handleTranslate = async () => {
     if (!input) return;
     setLoading(true);
-    setOutput(data.command);
-    fetchHistory();
+    setOutput(""); // Clear previous output
 
     try {
+      // 1. Ask the API for the translation
       const res = await fetch("/api/translate", {
         method: "POST",
         body: JSON.stringify({ prompt: input, mode }),
       });
+      
       const data = await res.json();
+
+      // 2. NOW we have data, so we can use it
       setOutput(data.command);
+      
+      // 3. Refresh the history list
+      fetchHistory(); 
+
     } catch (err) {
+      console.error(err);
       setOutput("# Error processing request");
     } finally {
       setLoading(false);
