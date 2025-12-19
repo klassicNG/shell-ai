@@ -1,5 +1,6 @@
 import Groq from "groq-sdk";
 import { NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -7,12 +8,11 @@ const groq = new Groq({
 
 export async function POST(req: Request) {
   try {
-    const { prompt, mode } = await req.json(); // <--- We now accept a "mode"
+    const { prompt, mode } = await req.json();
 
     let systemPrompt = "";
 
     if (mode === "explain") {
-      // MODE 2: EXPLAINER (The "Uno Reverse")
       systemPrompt = `You are a Linux Teacher.
       Task: Explain the given Bash command in simple English.
       Rules:
@@ -21,7 +21,6 @@ export async function POST(req: Request) {
       3. Briefly mention what specific flags do (e.g., "-r means recursive").
       4. If the command is dangerous, start with "⚠️ DANGER: ".`;
     } else {
-      // MODE 1: GENERATOR (Original)
       systemPrompt = `You are a Linux Command Line expert. 
       Task: Translate requests to Bash.
       Rules:
@@ -42,9 +41,28 @@ export async function POST(req: Request) {
 
     const command = completion.choices[0]?.message?.content || "# Error";
 
+    // --- SAVE TO SUPABASE ---
+    if (!command.includes("Error") && !command.startsWith("#")) {
+      // We use a different variable name here 'dbError' to avoid conflicts
+      const { error: dbError } = await supabase.from("history").insert({
+        prompt: prompt,
+        command: command,
+        mode: mode || "gen",
+      });
+
+      if (dbError) {
+        console.error("🔴 Supabase Write Error:", dbError.message);
+      } else {
+        console.log("🟢 Saved to Supabase successfully!");
+      }
+    }
+    // ------------------------
+
     return NextResponse.json({ command });
-  } catch (error) {
-    console.error("Groq Error:", error);
+
+  } catch (error: any) { 
+    // ^ We name this 'error' explicitly so the console.log below works
+    console.error("Groq/Server Error:", error);
     return NextResponse.json(
       { error: "Failed to generate command" },
       { status: 500 }
