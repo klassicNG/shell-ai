@@ -8,7 +8,8 @@ const groq = new Groq({
 
 export async function POST(req: Request) {
   try {
-    const { prompt, mode } = await req.json();
+    // 1. 👇 CRITICAL FIX: We must extract 'userId' here to use it later
+    const { prompt, mode, userId } = await req.json();
 
     let systemPrompt = "";
 
@@ -43,11 +44,11 @@ export async function POST(req: Request) {
 
     // --- SAVE TO SUPABASE ---
     if (!command.includes("Error") && !command.startsWith("#")) {
-      // We use a different variable name here 'dbError' to avoid conflicts
       const { error: dbError } = await supabase.from("history").insert({
         prompt: prompt,
         command: command,
         mode: mode || "gen",
+        user_id: userId || null, // <--- Now 'userId' exists, so this works
       });
 
       if (dbError) {
@@ -59,9 +60,7 @@ export async function POST(req: Request) {
     // ------------------------
 
     return NextResponse.json({ command });
-
-  } catch (error: any) { 
-    // ^ We name this 'error' explicitly so the console.log below works
+  } catch (error: any) {
     console.error("Groq/Server Error:", error);
     return NextResponse.json(
       { error: "Failed to generate command" },
